@@ -10,7 +10,8 @@
 #   - https://weechat.org/scripts/source/crypt.py.html/
 # - Alon Swartz for his blog post at  on python-crypto
 #   - http://www.turnkeylinux.org/blog/python-symmetric-encryption
-#
+# - Kyle Isom (https://github.com/kisom) for his input on best practices for
+#   python crypto
 
 SCRIPT_NAME = "chancrypt"
 SCRIPT_AUTHOR = "Colin Moller <colin@unixarmy.com>"
@@ -37,6 +38,7 @@ script_options = {
 channel_prefixes = ["#", "&"]
 
 cipher_mode = AES.MODE_CTR
+
 
 class CheckSumError(Exception):
     pass
