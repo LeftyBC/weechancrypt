@@ -73,9 +73,7 @@ def encrypt(plaintext, secret, checksum=True):
 
     return b64encode(
         zlib.compress(
-            b64encode(iv)
-            + ":"
-            + b64encode(encobj.encrypt(plaintext))
+            iv + encobj.encrypt(plaintext)
         )
     )
 
@@ -94,9 +92,8 @@ def decrypt(encoded_ciphertext, secret, checksum=True):
         b64decode(encoded_ciphertext)
     )
 
-    raw_iv, ciphertext = string.split(ciphertext_with_iv, ":", 1)
-    iv = b64decode(raw_iv)
-    ciphertext = b64decode(ciphertext)
+    iv = ciphertext_with_iv[:AES.block_size]
+    ciphertext = ciphertext_with_iv[AES.block_size:]
 
     encobj = AES.new(secret, AES.MODE_CFB, iv)
 
