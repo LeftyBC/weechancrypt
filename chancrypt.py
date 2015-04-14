@@ -19,7 +19,6 @@ SCRIPT_LICENSE = "BSD"
 SCRIPT_DESC = "Allows encrypted messaging in an irc channel with" \
               "a pre-shared key"
 
-import weechat
 import string
 import re
 
@@ -29,6 +28,7 @@ from base64 import b64encode, b64decode
 
 from Crypto.Cipher import AES
 from Crypto import Random
+from Crypto.Protocol.KDF import PBKDF2
 
 script_options = {
     "message_indicator": "⚷"
@@ -36,19 +36,19 @@ script_options = {
 
 channel_prefixes = ["#", "&"]
 
-acceptable_key_lengths = [16, 24, 32]
-
 
 class CheckSumError(Exception):
     pass
 
 
-def _lazysecret(secret, blocksize=AES.block_size, padding='}'):
-    """pads secret if not legal AES block size (16, 24, 32)"""
-    secret = str(secret)
-    if not len(secret) in acceptable_key_lengths:
-        return secret + (blocksize - len(secret)) * padding
-    return secret
+def generate_key_from_passphrase(secret):
+    """pads secret to AES-256 block size"""
+    # We set a low-ish number of iterations to prevent
+    # CPU spikes when sending frequent messages.
+    iterations = 1000
+    salt = "SaltedPasswordsAreTasty"
+
+    return PBKDF2(secret, salt, dkLen=32, count=iterations)
 
 
 def generate_aes_key():
@@ -64,7 +64,7 @@ def encrypt(plaintext, secret, checksum=True):
     returns base64 encoded zlib compressed iv + ciphertext
     """
 
-    secret = _lazysecret(secret)
+    secret = generate_key_from_passphrase(secret)
     iv = generate_aes_key()
     encobj = AES.new(secret, AES.MODE_CFB, iv)
 
@@ -88,7 +88,7 @@ def decrypt(encoded_ciphertext, secret, checksum=True):
     returns plaintext
     """
 
-    secret = _lazysecret(secret)
+    secret = generate_key_from_passphrase(secret)
 
     ciphertext_with_iv = zlib.decompress(
         b64decode(encoded_ciphertext)
@@ -193,20 +193,30 @@ def weechat_msg_encrypt(data, msgtype, servername, args):
 
 
 # register script with weechat, set config
-if weechat.register(
-        SCRIPT_NAME, SCRIPT_AUTHOR, SCRIPT_VERSION,
-        SCRIPT_LICENSE, SCRIPT_DESC, "", "UTF-8"):
-    weechat_dir = weechat.info_get("weechat_dir", "")
-    version = weechat.info_get("version_number", "") or 0
-    if int(version) < 0x00030000:
-        weechat.prnt("", "%s%s: WeeChat 0.3.0 is required for this script."
-                     % (weechat.prefix("error"), SCRIPT_NAME))
+if __name__ == "__main__":
+    try:
+        import weechat
+        if weechat.register(
+                SCRIPT_NAME, SCRIPT_AUTHOR, SCRIPT_VERSION,
+                SCRIPT_LICENSE, SCRIPT_DESC, "", "UTF-8"):
+            weechat_dir = weechat.info_get("weechat_dir", "")
+            version = weechat.info_get("version_number", "") or 0
+            if int(version) < 0x00030000:
+                weechat.prnt("", "%s%s: WeeChat 0.3.0 is"
+                                 " required for this script."
+                             % (weechat.prefix("error"), SCRIPT_NAME))
 
-    else:
-        weechat.bar_item_new('encryption', 'encryption_statusbar', '')
-        for option, default_value in script_options.iteritems():
-            if not weechat.config_is_set_plugin(option):
-                weechat.config_set_plugin(option, default_value)
+            else:
+                weechat.bar_item_new('encryption', 'encryption_statusbar', '')
+                for option, default_value in script_options.iteritems():
+                    if not weechat.config_is_set_plugin(option):
+                        weechat.config_set_plugin(option, default_value)
 
-        weechat.hook_modifier("irc_in_privmsg", "weechat_msg_decrypt", "")
-        weechat.hook_modifier("irc_out_privmsg", "weechat_msg_encrypt", "")
+                weechat.hook_modifier("irc_in_privmsg",
+                                      "weechat_msg_decrypt", "")
+                weechat.hook_modifier("irc_out_privmsg",
+                                      "weechat_msg_encrypt", "")
+    except ImportError:
+        # not running under Weechat, run a simple test instead
+        print "Running simple tests"
+        pass
