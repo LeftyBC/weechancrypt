@@ -112,12 +112,12 @@ def decrypt(encoded_ciphertext, secret, checksum=True):
 
 def get_key_for_channel(server, channel):
 
-    config_location = "pre_shared_key.%s.%s" % (server, channel)
+    config_location = "passphrase.%s.%s" % (server, channel)
     config_prefix = "plugins.var.python.chancrypt"
     channel_key = weechat.config_get_plugin(config_location)
 
     if len(channel_key) < 1 or channel_key is None:
-        weechat.prnt("", "Recieved an encrypted message, but encryption key"
+        weechat.prnt("", "Recieved an encrypted message, but passphrase is"
                          " not set for channel %s on network %s"
                          % (channel, server))
         weechat.prnt("", "Use '/set %s.%s SOME_KEY' to enable encryption."
@@ -165,7 +165,7 @@ def weechat_msg_decrypt(data, msgtype, servername, args):
             + weechat.config_get_plugin("message_indicator") + " " \
             + chr(15) + timestamp + decrypted
     except CheckSumError:
-        decrypted = "(Invalid message - Incorrect encryption key)"
+        decrypted = "(Invalid message - Incorrect passphrase)"
         return hostmask \
             + "PRIVMSG " \
             + channelname  \
@@ -207,7 +207,6 @@ if __name__ == "__main__":
                              % (weechat.prefix("error"), SCRIPT_NAME))
 
             else:
-                weechat.bar_item_new('encryption', 'encryption_statusbar', '')
                 for option, default_value in script_options.iteritems():
                     if not weechat.config_is_set_plugin(option):
                         weechat.config_set_plugin(option, default_value)
@@ -219,4 +218,5 @@ if __name__ == "__main__":
     except ImportError:
         # not running under Weechat, run a simple test instead
         print "Running simple tests"
+        # TODO: run some simple tests
         pass
