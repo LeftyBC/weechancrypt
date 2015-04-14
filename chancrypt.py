@@ -14,7 +14,7 @@
 
 SCRIPT_NAME = "chancrypt"
 SCRIPT_AUTHOR = "Colin Moller <colin@unixarmy.com>"
-SCRIPT_VERSION = "0.9.1"
+SCRIPT_VERSION = "0.9.3"
 SCRIPT_LICENSE = "BSD"
 SCRIPT_DESC = "Allows encrypted messaging in an irc channel with" \
               "a pre-shared key"
