@@ -40,3 +40,4 @@ Users that do not have this plugin will only see a message similar to:
 - Hashed passphrases so they are not stored in plaintext in Weechat configs
 - Don't use CRC32 checksums since they're not a cryptographic hash
 - Show a statusbar on the channel's buffer to indicate if encryption for that channel is enabled
+- Show a encryption status prefix on outgoing encrypted messages
