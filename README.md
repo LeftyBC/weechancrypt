@@ -39,3 +39,4 @@ Users that do not have this plugin will only see a message similar to:
 - Perfect Forward Secrecy with the pre-shared key so an attacker who discovers the PSK cannot access previous conversations.
 - Hashed passphrases so they are not stored in plaintext in Weechat configs
 - Don't use CRC32 checksums since they're not a cryptographic hash
+- Show a statusbar on the channel's buffer to indicate if encryption for that channel is enabled
