@@ -43,7 +43,7 @@ PBKDF2 is used to derive encryption keys from the user-supplied passphrase.
 ## Loading
 
 Clone this repo, then run
-`ls -s <repo_location>/chancrypt.py ~/.weechat/python/autoload/chancrypt.py` to
+`ls -s weechancrypt/chancrypt.py ~/.weechat/python/autoload/chancrypt.py` to
 enable auto-loading of the script.
 
 Then, in weechat, run `/script load chancrypt.py` to load the script.
