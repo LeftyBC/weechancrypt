@@ -37,7 +37,7 @@ Requires WeeChat versions newer than 0.3.0.
 
 ## Crypto
 
-This plugin uses AES-256 in CFB mode with random per-message IVs.
+This plugin uses AES-256 in CTR mode with random per-message IVs.
 PBKDF2 is used to derive encryption keys from the user-supplied passphrase.
 
 ## Loading
@@ -78,7 +78,7 @@ conversation window.
 - If different users are using different passphrases in the same channel,
 the plugin will complain that the message is invalid for those messages that do
 not match the encryption key.
-- This plugin is hard-coded to use AES-256 in CFB mode with random IVs.
+- This plugin is hard-coded to use AES-256 in CTR mode with random IVs.
 - This plugin does not take IRC server line-length limits into account at the
 moment.  It does compress the ciphertext with zlib before transmitting, but
 base64 is not an overly efficient encoding method so that offsets the savings
@@ -90,12 +90,9 @@ Crypto-related:
 - Hashed passphrases so they are not stored in plaintext in Weechat configs
 - Don't use CRC32 checksums since they're not a cryptographic hash (@kisom
 recommends hmac-sha-256 encrypt-then-MAC)
-- Switch to either CTR or GCM mode instead of using CFB mode (as recommended
 by @kisom)
 - Switch to either scrypt or the HKDF from the MAC we pick instead of using
 PBKDF2 (as recommended by @kisom)
-- Don't encode the IV and ciphertext with base64, then base64 it again.  The
-IV can be simply prepended to the ciphertext as it's always a known length.
 - Perfect Forward Secrecy with the pre-shared key so an attacker who discovers
 the PSK cannot access previous conversations.
 

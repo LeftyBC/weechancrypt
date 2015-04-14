@@ -36,6 +36,7 @@ script_options = {
 
 channel_prefixes = ["#", "&"]
 
+cipher_mode = AES.MODE_CTR
 
 class CheckSumError(Exception):
     pass
@@ -66,7 +67,7 @@ def encrypt(plaintext, secret, checksum=True):
 
     secret = generate_key_from_passphrase(secret)
     iv = generate_aes_key()
-    encobj = AES.new(secret, AES.MODE_CFB, iv)
+    encobj = AES.new(secret, cipher_mode, iv)
 
     if checksum:
         plaintext += struct.pack("=i", zlib.crc32(plaintext))
@@ -95,7 +96,7 @@ def decrypt(encoded_ciphertext, secret, checksum=True):
     iv = ciphertext_with_iv[:AES.block_size]
     ciphertext = ciphertext_with_iv[AES.block_size:]
 
-    encobj = AES.new(secret, AES.MODE_CFB, iv)
+    encobj = AES.new(secret, cipher_mode, iv)
 
     plaintext = encobj.decrypt(ciphertext)
 
