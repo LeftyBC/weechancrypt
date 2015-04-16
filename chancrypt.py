@@ -36,7 +36,7 @@ script_options = {
 
 channel_prefixes = ["#", "&"]
 
-cipher_mode = AES.MODE_CTR
+cipher_mode = AES.MODE_CFB
 
 class CheckSumError(Exception):
     pass
