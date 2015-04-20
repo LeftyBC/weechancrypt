@@ -20,6 +20,7 @@ SCRIPT_LICENSE = "BSD"
 SCRIPT_DESC = "Allows encrypted messaging in an irc channel with" \
               "a pre-shared key"
 
+
 import string
 import re
 
@@ -37,21 +38,53 @@ script_options = {
 
 channel_prefixes = ["#", "&"]
 
-cipher_mode = AES.MODE_CTR
+PROTOCOL_VERSION = 0x01
+CIPHER_MODE = AES.MODE_OFB
 
 
 class CheckSumError(Exception):
     pass
 
 
-def generate_key_from_passphrase(secret):
-    """pads secret to AES-256 block size"""
+def pad_data(data):
+    """pad_data pads out the data to an AES block length."""
+    # return data if no padding is required
+    if len(data) % 16 == 0:
+        return data
+
+    # subtract one byte that should be the 0x80
+    # if 0 bytes of padding are required, it means only
+    # a single \x80 is required.
+
+    padding_required = 15 - (len(data) % 16)
+
+    data = '%s\x80' % data
+    data = '%s%s' % (data, '\x00' * padding_required)
+
+    return data
+
+
+def unpad_data(data):
+    """unpad_data removes padding from the data."""
+    if not data:
+        return data
+
+    data = data.rstrip('\x00')
+    if data[-1] == '\x80':
+        return data[:-1]
+    else:
+        return data
+
+
+def generate_key_from_passphrase(secret, salt):
+    """Generates a key from the user's passphrase using key stretching"""
     # We set a low-ish number of iterations to prevent
     # CPU spikes when sending frequent messages.
     iterations = 1000
-    salt = "SaltedPasswordsAreTasty"
+    # TODO: generate and store the salt with the message
+    int_salt = "SaltedPasswordsAreTasty"
 
-    return PBKDF2(secret, salt, dkLen=32, count=iterations)
+    return PBKDF2(secret, salt + int_salt, dkLen=32, count=iterations)
 
 
 def generate_aes_key():
@@ -59,7 +92,7 @@ def generate_aes_key():
     return rnd
 
 
-def encrypt(plaintext, secret, checksum=True):
+def encrypt(plaintext, secret, salt, checksum=True):
     """encrypt plaintext with secret
     plaintext   - content to encrypt
     secret      - secret to encrypt plaintext
@@ -67,21 +100,21 @@ def encrypt(plaintext, secret, checksum=True):
     returns base64 encoded zlib compressed iv + ciphertext
     """
 
-    secret = generate_key_from_passphrase(secret)
     iv = generate_aes_key()
-    encobj = AES.new(secret, cipher_mode, iv)
+    secret = generate_key_from_passphrase(secret, salt)
+    encobj = AES.new(secret, CIPHER_MODE, iv)
 
     if checksum:
         plaintext += struct.pack("=i", zlib.crc32(plaintext))
 
     return b64encode(
         zlib.compress(
-            iv + encobj.encrypt(plaintext)
+            iv + encobj.encrypt(pad_data(plaintext))
         )
     )
 
 
-def decrypt(encoded_ciphertext, secret, checksum=True):
+def decrypt(encoded_ciphertext, secret, salt, checksum=True):
     """decrypt ciphertext with secret
     encoded_ciphertext  - base64 encoded compressed iv + ciphertext to decrypt
     secret      - secret to decrypt ciphertext
@@ -89,7 +122,7 @@ def decrypt(encoded_ciphertext, secret, checksum=True):
     returns plaintext
     """
 
-    secret = generate_key_from_passphrase(secret)
+    secret = generate_key_from_passphrase(secret, salt)
 
     ciphertext_with_iv = zlib.decompress(
         b64decode(encoded_ciphertext)
@@ -98,9 +131,9 @@ def decrypt(encoded_ciphertext, secret, checksum=True):
     iv = ciphertext_with_iv[:AES.block_size]
     ciphertext = ciphertext_with_iv[AES.block_size:]
 
-    encobj = AES.new(secret, cipher_mode, iv)
+    encobj = AES.new(secret, CIPHER_MODE, iv)
 
-    plaintext = encobj.decrypt(ciphertext)
+    plaintext = unpad_data(encobj.decrypt(ciphertext))
 
     if checksum:
         crc, plaintext = (plaintext[-4:], plaintext[:-4])
@@ -157,7 +190,7 @@ def weechat_msg_decrypt(data, msgtype, servername, args):
 
     # decrypt message
     try:
-        decrypted = decrypt(message, channel_key)
+        decrypted = decrypt(message, channel_key, channelname)
         return hostmask \
             + "PRIVMSG " \
             + channelname \
@@ -186,7 +219,7 @@ def weechat_msg_encrypt(data, msgtype, servername, args):
         return args
 
     # encrypt message
-    encrypted = encrypt(message, channel_key)
+    encrypted = encrypt(message, channel_key, channelname)
 
     returning = pre + ":" + "!ENC " + encrypted
     return returning
