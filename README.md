@@ -4,6 +4,26 @@ Python plugin for Weechat that allows encrypted messages in an IRC channel.
 Uses a pre-shared key so all channel members with the correct passphrase
 can recieve and send messages.
 
+## Disclaimer
+
+The author(s) of this script are furnishing this item "as is". The author(s) do
+not provide any warranty of the item whatsoever, whether express, implied, or
+statutory, including, but not limited to, any warranty of merchantability or
+fitness for a particular purpose or any warranty that the contents of the item
+will be error-free.
+
+In no respect shall the author(s) incur any liability for any damages,
+including, but limited to, direct, indirect, special, or consequential damages
+arising out of, resulting from, or any way connected to the use of the item,
+whether or not based upon warranty, contract, tort, or otherwise; whether or
+not injury was sustained by persons or property or otherwise; and whether or
+not loss was sustained from, or arose out of, the results of, the item, or any
+services that may be provided by the author(s).
+
+The author(s) of this script also do not make any claims about the security of
+this script in any way.  Read the code, understand it, and make judgements for
+yourself.
+
 ## Motivation
 
 IRC (Internet Relay Chat) is an inherently unencrypted, unauthenticated
@@ -37,13 +57,13 @@ Requires WeeChat versions newer than 0.3.0.
 
 ## Crypto
 
-This plugin uses AES-256 in CTR mode with random per-message IVs.
+This plugin uses AES-256 in CFB mode with random per-message IVs.
 PBKDF2 is used to derive encryption keys from the user-supplied passphrase.
 
 ## Loading
 
 Clone this repo, then run
-`ls -s weechancrypt/chancrypt.py ~/.weechat/python/autoload/chancrypt.py` to
+`ln -s weechancrypt/chancrypt.py ~/.weechat/python/autoload/chancrypt.py` to
 enable auto-loading of the script.
 
 Then, in weechat, run `/script load chancrypt.py` to load the script.
