@@ -17,7 +17,7 @@ SCRIPT_NAME = "chancrypt"
 SCRIPT_AUTHOR = "Colin Moller <colin@unixarmy.com>"
 SCRIPT_VERSION = "0.9.3"
 SCRIPT_LICENSE = "BSD"
-SCRIPT_DESC = "Allows encrypted messaging in an irc channel with" \
+SCRIPT_DESC = "Allows encrypted messaging in an irc channel with " \
               "a pre-shared key"
 
 
@@ -45,6 +45,9 @@ CIPHER_MODE = AES.MODE_OFB
 class CheckSumError(Exception):
     pass
 
+def debug(msg):
+    if str(weechat.config_get_plugin("debug")) != "0":
+	weechat.prnt("", "[weechancrypt] DEBUG: %s" % msg)
 
 def pad_data(data):
     """pad_data pads out the data to an AES block length."""
@@ -150,10 +153,10 @@ def get_key_for_channel(server, channel):
     channel_key = weechat.config_get_plugin(config_location)
 
     if len(channel_key) < 1 or channel_key is None:
-        weechat.prnt("", "Recieved an encrypted message, but passphrase is"
+        debug("Recieved an encrypted message, but passphrase is"
                          " not set for channel %s on network %s"
                          % (channel, server))
-        weechat.prnt("", "Use '/set %s.%s SOME_KEY' to enable encryption."
+        debug("Use '/set %s.%s SOME_KEY' to enable encryption."
                          % (config_prefix, config_location))
         return None
 
